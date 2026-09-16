@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Mood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---- palettes: each mood carries a day set and a night set ---- */
+  .panel[data-mood="great"]{
+    --l-sky-1:#8fd4f7; --l-sky-2:#d8f1ff; --l-hill-a:#68cd88; --l-hill-b:#3ea567;
+    --l-orb:#ffd23f; --l-cloud:#ffffff; --l-ink:#1d3a52;
+    --d-sky-1:#12314f; --d-sky-2:#2b5f7d; --d-hill-a:#1f5a41; --d-hill-b:#14402f;
+    --d-orb:#f3e7b8; --d-cloud:#4a7a96; --d-ink:#e8f4ff;
+  }
+  .panel[data-mood="calm"]{
+    --l-sky-1:#f7bf9b; --l-sky-2:#fde9d4; --l-hill-a:#84c9a4; --l-hill-b:#5da884;
+    --l-orb:#ff9f68; --l-cloud:#fff4e8; --l-ink:#4a2b1e;
+    --d-sky-1:#2d2140; --d-sky-2:#6b4560; --d-hill-a:#33544a; --d-hill-b:#223b35;
+    --d-orb:#ffc9a0; --d-cloud:#5c4159; --d-ink:#ffe9d8;
+  }
+  .panel[data-mood="flat"]{
+    --l-sky-1:#c3ccd2; --l-sky-2:#e9eef0; --l-hill-a:#a9b7a6; --l-hill-b:#8a9a89;
+    --l-orb:#dfe6e9; --l-cloud:#f2f5f6; --l-ink:#39444a;
+    --d-sky-1:#252a2e; --d-sky-2:#434c52; --d-hill-a:#333c36; --d-hill-b:#242b26;
+    --d-orb:#8b969c; --d-cloud:#4d565c; --d-ink:#dde3e6;
+  }
+  .panel[data-mood="low"]{
+    --l-sky-1:#6b84a0; --l-sky-2:#a6b9ca; --l-hill-a:#5b8278; --l-hill-b:#446660;
+    --l-orb:#b9cad8; --l-cloud:#dfe8ef; --l-ink:#f2f7fb;
+    --d-sky-1:#17222f; --d-sky-2:#33465c; --d-hill-a:#243b38; --d-hill-b:#172825;
+    --d-orb:#5e7285; --d-cloud:#4a5f74; --d-ink:#dbe7f2;
+  }
+  .panel[data-mood="stormy"]{
+    --l-sky-1:#434d61; --l-sky-2:#737d92; --l-hill-a:#3d4a4a; --l-hill-b:#2a3434;
+    --l-orb:#8a93a6; --l-cloud:#9aa3b5; --l-ink:#f4f5f8;
+    --d-sky-1:#12151d; --d-sky-2:#2b3140; --d-hill-a:#222b2b; --d-hill-b:#151b1b;
+    --d-orb:#4c5566; --d-cloud:#3f4757; --d-ink:#eceef4;
+  }
+  /* no mood recorded yet */
+  .panel[data-mood="none"]{
+    --l-sky-1:#dcdfe4; --l-sky-2:#f0f2f4; --l-hill-a:#c2c9cc; --l-hill-b:#a9b1b5;
+    --l-orb:#e6eaec; --l-cloud:#f6f8f9; --l-ink:#5b656b;
+    --d-sky-1:#1c2024; --d-sky-2:#33393f; --d-hill-a:#2a3035; --d-hill-b:#1e2327;
+    --d-orb:#3f464c; --d-cloud:#434a51; --d-ink:#b9c1c6;
+  }
+
+  .panel{
+    --sky-1:var(--l-sky-1); --sky-2:var(--l-sky-2);
+    --hill-a:var(--l-hill-a); --hill-b:var(--l-hill-b);
+    --orb:var(--l-orb); --cloud:var(--l-cloud); --ink:var(--l-ink);
+    --glass:rgba(255,255,255,.22); --glass-line:rgba(255,255,255,.42);
+  }
+  :root{ color-scheme:light dark; --page:#e9eef0; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --page:#14181b; }
+    :root:not([data-theme="light"]) .panel{
+      --sky-1:var(--d-sky-1); --sky-2:var(--d-sky-2);
+      --hill-a:var(--d-hill-a); --hill-b:var(--d-hill-b);
+      --orb:var(--d-orb); --cloud:var(--d-cloud); --ink:var(--d-ink);
+      --glass:rgba(255,255,255,.1); --glass-line:rgba(255,255,255,.22);
+    }
+  }
+  :root[data-theme="dark"]{ --page:#14181b; }
+  :root[data-theme="dark"] .panel{
+    --sky-1:var(--d-sky-1); --sky-2:var(--d-sky-2);
+    --hill-a:var(--d-hill-a); --hill-b:var(--d-hill-b);
+    --orb:var(--d-orb); --cloud:var(--d-cloud); --ink:var(--d-ink);
+    --glass:rgba(255,255,255,.1); --glass-line:rgba(255,255,255,.22);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--page);
+    font-family:"Fredoka","Trebuchet MS",-apple-system,"Segoe UI",sans-serif;
+    overflow:hidden;
+  }
+
+  .board{
+    display:flex; flex-direction:column;
+    height:100vh; height:100dvh;
+  }
+  .panel{
+    position:relative; flex:1 1 50%; min-height:0;
+    color:var(--ink); overflow:hidden;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    transition:color .7s ease;
+  }
+  .panel:first-child{ padding-top:env(safe-area-inset-top); }
+  .panel:last-child{ padding-bottom:calc(env(safe-area-inset-bottom)); }
+
+  .scene{position:absolute; inset:0; width:100%; height:100%;}
+  .layer{opacity:0; transition:opacity .8s ease;}
+  [data-mood="great"]  .l-great,
+  [data-mood="calm"]   .l-calm,
+  [data-mood="flat"]   .l-flat,
+  [data-mood="low"]    .l-low,
+  [data-mood="stormy"] .l-stormy{opacity:1;}
+  .hill-a{fill:var(--hill-a); transition:fill .7s ease;}
+  .hill-b{fill:var(--hill-b); transition:fill .7s ease;}
+  .cloud{fill:var(--cloud); transition:fill .7s ease;}
+  .orb{fill:var(--orb); transition:fill .7s ease;}
+
+  @keyframes drift{from{transform:translateX(-5%)}to{transform:translateX(5%)}}
+  @keyframes fall{from{transform:translateY(-14px)}to{transform:translateY(26px)}}
+  @keyframes glow{from{transform:scale(1)}to{transform:scale(1.06)}}
+  @keyframes flash{0%,92%,100%{opacity:0}94%,96%{opacity:.85}}
+  .drift{animation:drift 26s ease-in-out infinite alternate;}
+  .drift.slow{animation-duration:38s;}
+  .rain line{animation:fall 1.1s linear infinite;}
+  .sunglow{animation:glow 5s ease-in-out infinite alternate; transform-origin:center;}
+  .bolt{animation:flash 7s linear infinite;}
+
+  .readout{position:relative; z-index:1; text-align:center; padding:0 1rem;}
+  .who{
+    margin:0 0 .3rem; font-size:.95rem; font-weight:500;
+    opacity:.7;
+  }
+  .word{
+    margin:0; font-weight:500; letter-spacing:-.02em; line-height:.95;
+    font-size:clamp(2.6rem,13vw,5rem);
+    text-shadow:0 2px 20px rgba(0,0,0,.13);
+  }
+  .stamp{margin:.55rem 0 0; font-size:.88rem; font-weight:400; opacity:.68;}
+
+  .picker{
+    position:absolute; z-index:2; left:50%; transform:translateX(-50%);
+    bottom:clamp(.8rem,3vh,1.4rem);
+    display:flex; gap:clamp(.25rem,2.4vw,.8rem);
+    padding:.45rem; border-radius:999px;
+    background:var(--glass); border:1px solid var(--glass-line);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  }
+  .panel:last-child .picker{ bottom:calc(clamp(.8rem,3vh,1.4rem) + env(safe-area-inset-bottom)); }
+  .face{
+    width:clamp(40px,11vw,54px); height:clamp(40px,11vw,54px);
+    padding:0; border:0; border-radius:50%;
+    background:transparent; color:var(--ink);
+    cursor:pointer; opacity:.5;
+    transition:opacity .3s ease, transform .3s cubic-bezier(.2,.9,.3,1.4);
+  }
+  .face svg{width:100%; height:100%; display:block;}
+  .face circle.dish{fill:currentColor; opacity:.16;}
+  .face .stroke{fill:none; stroke:currentColor; stroke-width:5; stroke-linecap:round;}
+  .face[aria-checked="true"]{opacity:1; transform:translateY(-5px) scale(1.1);}
+  .face[aria-checked="true"] circle.dish{opacity:.34;}
+  .face:focus-visible{outline:2.5px solid currentColor; outline-offset:3px;}
+  @media (hover:hover){ .face:hover{opacity:.85;} }
+
+  .note{
+    position:absolute; z-index:3; top:.7rem; left:50%; transform:translateX(-50%);
+    padding:.35rem .8rem; border-radius:999px;
+    background:rgba(0,0,0,.45); color:#fff; font-size:.8rem;
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .note.show{opacity:1;}
+
+  /* ---- key gate ---- */
+  .gate{
+    position:fixed; inset:0; z-index:10;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:1rem; padding:2rem 1.5rem; background:var(--page); color:#6a7378;
+    text-align:center;
+  }
+  .gate[hidden]{display:none;}
+  .gate h1{margin:0; font-size:1.5rem; font-weight:500; color:#4a5257;}
+  .gate p{margin:0; font-size:.92rem; max-width:22rem; line-height:1.5;}
+  .gate form{display:flex; flex-direction:column; gap:.7rem; width:100%; max-width:20rem;}
+  .gate input{
+    font:inherit; font-size:1rem; padding:.85rem 1rem; border-radius:14px;
+    border:1.5px solid rgba(128,140,148,.45); background:transparent; color:inherit;
+    text-align:center;
+  }
+  .gate input:focus{outline:2px solid #7d8a91; outline-offset:1px;}
+  .gate button{
+    font:inherit; font-size:1rem; font-weight:500; padding:.85rem 1rem;
+    border:0; border-radius:14px; background:#4a5257; color:#fff; cursor:pointer;
+  }
+  .gate .err{color:#c0503f; min-height:1.2em; font-size:.88rem;}
+
+  @media (min-width:800px) and (orientation:landscape){
+    .board{flex-direction:row;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;}
+    .face,.layer,.hill-a,.hill-b,.cloud,.orb,.panel{transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="board" id="board" hidden>
+  <section class="panel" id="panel-you" data-mood="none"></section>
+  <section class="panel" id="panel-them" data-mood="none"></section>
+</div>
+<div class="note" id="note"></div>
+
+<div class="gate" id="gate" hidden>
+  <h1>Your key</h1>
+  <p>Paste the key you were given. It stays on this device, and only your key can change your own mood.</p>
+  <form id="gate-form">
+    <input id="gate-input" type="password" autocomplete="off" autocapitalize="off"
+           spellcheck="false" placeholder="Key" aria-label="Your key">
+    <button type="submit">Open</button>
+  </form>
+  <p class="err" id="gate-err"></p>
+</div>
+
+<script>
+(function(){
+  var MOODS = [
+    {id:"great",  label:"Great",  mouth:"M30 60 Q50 80 70 60"},
+    {id:"calm",   label:"Calm",   mouth:"M32 62 Q50 72 68 62"},
+    {id:"flat",   label:"Okay",   mouth:"M33 64 L67 64"},
+    {id:"low",    label:"Low",    mouth:"M32 70 Q50 54 68 70"},
+    {id:"stormy", label:"Stormy", mouth:"M32 70 Q41 58 50 68 Q59 78 68 64",
+                  brow:"M28 34 L44 40 M72 34 L56 40"}
+  ];
+
+  var board   = document.getElementById("board"),
+      gate    = document.getElementById("gate"),
+      gateErr = document.getElementById("gate-err"),
+      noteEl  = document.getElementById("note"),
+      panels  = { you: document.getElementById("panel-you"),
+                  them: document.getElementById("panel-them") },
+      key = null, youId = null, noteTimer = null, poll = null;
+
+  /* ---------- scene markup ---------- */
+  function scene(uid){
+    return '<svg class="scene" viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+    + '<defs><linearGradient id="sky-'+uid+'" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="var(--sky-1)"/><stop offset="100%" stop-color="var(--sky-2)"/>'
+    + '</linearGradient><clipPath id="clip-'+uid+'"><rect width="160" height="200"/></clipPath></defs>'
+    + '<rect x="-20" y="-20" width="200" height="240" fill="url(#sky-'+uid+')"/>'
+    + '<g clip-path="url(#clip-'+uid+')">'
+
+    + '<g class="layer l-great">'
+      + '<g class="sunglow"><circle class="orb" cx="122" cy="40" r="19"/></g>'
+      + '<g class="drift slow cloud" opacity=".85"><ellipse cx="32" cy="54" rx="16" ry="8"/>'
+      + '<ellipse cx="44" cy="50" rx="11" ry="7"/></g></g>'
+
+    + '<g class="layer l-calm">'
+      + '<g class="sunglow"><circle class="orb" cx="116" cy="70" r="15"/></g>'
+      + '<g class="drift cloud" opacity=".8"><ellipse cx="40" cy="46" rx="19" ry="7"/>'
+      + '<ellipse cx="53" cy="42" rx="12" ry="6"/></g>'
+      + '<g class="drift slow cloud" opacity=".55"><ellipse cx="118" cy="28" rx="14" ry="5"/></g></g>'
+
+    + '<g class="layer l-flat">'
+      + '<g class="drift slow cloud" opacity=".9"><ellipse cx="42" cy="38" rx="28" ry="12"/>'
+      + '<ellipse cx="68" cy="32" rx="21" ry="10"/></g>'
+      + '<g class="drift cloud" opacity=".72"><ellipse cx="118" cy="62" rx="26" ry="10"/>'
+      + '<ellipse cx="98" cy="58" rx="17" ry="8"/></g></g>'
+
+    + '<g class="layer l-low">'
+      + '<g class="drift slow cloud" opacity=".95"><ellipse cx="56" cy="38" rx="32" ry="14"/>'
+      + '<ellipse cx="84" cy="32" rx="23" ry="11"/><ellipse cx="110" cy="40" rx="19" ry="9"/></g>'
+      + '<g class="rain" stroke="var(--cloud)" stroke-width="2" stroke-linecap="round" opacity=".6">'
+      + '<line x1="30" y1="64" x2="27" y2="74" style="animation-delay:0s"/>'
+      + '<line x1="50" y1="58" x2="47" y2="68" style="animation-delay:.42s"/>'
+      + '<line x1="68" y1="68" x2="65" y2="78" style="animation-delay:.18s"/>'
+      + '<line x1="88" y1="60" x2="85" y2="70" style="animation-delay:.63s"/>'
+      + '<line x1="106" y1="70" x2="103" y2="80" style="animation-delay:.3s"/>'
+      + '<line x1="126" y1="62" x2="123" y2="72" style="animation-delay:.55s"/>'
+      + '<line x1="40" y1="92" x2="37" y2="102" style="animation-delay:.75s"/>'
+      + '<line x1="78" y1="96" x2="75" y2="106" style="animation-delay:.1s"/>'
+      + '<line x1="116" y1="94" x2="113" y2="104" style="animation-delay:.9s"/></g></g>'
+
+    + '<g class="layer l-stormy">'
+      + '<g class="drift cloud"><ellipse cx="52" cy="34" rx="38" ry="16"/>'
+      + '<ellipse cx="90" cy="28" rx="28" ry="13"/><ellipse cx="120" cy="38" rx="22" ry="11"/></g>'
+      + '<path class="bolt" d="M82 46 L70 76 L82 76 L72 104 L98 68 L85 68 L95 46 Z" fill="#ffe9a8"/>'
+      + '<g class="rain" stroke="var(--cloud)" stroke-width="2.4" stroke-linecap="round" opacity=".5">'
+      + '<line x1="34" y1="62" x2="29" y2="74" style="animation-delay:.05s"/>'
+      + '<line x1="54" y1="70" x2="49" y2="82" style="animation-delay:.35s"/>'
+      + '<line x1="112" y1="64" x2="107" y2="76" style="animation-delay:.2s"/>'
+      + '<line x1="132" y1="76" x2="127" y2="88" style="animation-delay:.6s"/></g></g>'
+
+    + '<path class="hill-a" d="M-10 158 C 26 134, 62 176, 96 152 C 124 132, 150 160, 176 146 L176 210 L-10 210 Z"/>'
+    + '<path class="hill-b" d="M-10 182 C 30 164, 70 196, 110 176 C 140 160, 160 182, 176 172 L176 210 L-10 210 Z"/>'
+    + '</g></svg>';
+  }
+
+  function faceSVG(m){
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">'
+      + '<circle class="dish" cx="50" cy="50" r="48"/>'
+      + '<circle cx="35" cy="42" r="5" fill="currentColor"/>'
+      + '<circle cx="65" cy="42" r="5" fill="currentColor"/>'
+      + (m.brow ? '<path class="stroke" d="'+m.brow+'" stroke-width="4"/>' : '')
+      + '<path class="stroke" d="'+m.mouth+'"/></svg>';
+  }
+
+  function buildPanel(el, uid, withPicker){
+    el.innerHTML = scene(uid)
+      + '<div class="readout"><p class="who"></p><h2 class="word">—</h2><p class="stamp"></p></div>';
+    if(!withPicker) return;
+    var picker = document.createElement("div");
+    picker.className = "picker";
+    picker.setAttribute("role","radiogroup");
+    picker.setAttribute("aria-label","How do you feel right now?");
+    MOODS.forEach(function(m){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "face";
+      b.setAttribute("role","radio");
+      b.setAttribute("aria-checked","false");
+      b.setAttribute("aria-label", m.label);
+      b.dataset.mood = m.id;
+      b.innerHTML = faceSVG(m);
+      b.addEventListener("click", function(){ send(m.id); });
+      picker.appendChild(b);
+    });
+    el.appendChild(picker);
+  }
+
+  /* ---------- rendering ---------- */
+  function timeText(ts){
+    if(!ts) return "No check-in yet";
+    var d = new Date(ts), now = new Date();
+    var t = d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    return d.toDateString() === now.toDateString()
+      ? "Since " + t
+      : "Since " + d.toLocaleDateString([], {month:"short", day:"numeric"}) + ", " + t;
+  }
+
+  function paint(el, person, isYou){
+    var m = MOODS.filter(function(x){ return x.id === person.mood; })[0];
+    el.dataset.mood = m ? m.id : "none";
+    el.querySelector(".who").textContent = isYou ? "You" : person.name;
+    el.querySelector(".word").textContent = m ? m.label : "—";
+    el.querySelector(".stamp").textContent = timeText(person.at);
+    var picker = el.querySelector(".picker");
+    if(picker){
+      Array.prototype.forEach.call(picker.children, function(b){
+        b.setAttribute("aria-checked", String(m && b.dataset.mood === m.id));
+      });
+    }
+  }
+
+  function apply(state){
+    youId = state.you;
+    var themId = Object.keys(state.people).filter(function(k){ return k !== youId; })[0];
+    paint(panels.you, state.people[youId], true);
+    paint(panels.them, state.people[themId], false);
+  }
+
+  function note(msg){
+    noteEl.textContent = msg;
+    noteEl.classList.add("show");
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function(){ noteEl.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------- network ---------- */
+  function call(method, body){
+    return fetch("/api/mood", {
+      method: method,
+      headers: Object.assign({ "x-mood-key": key },
+               body ? {"content-type":"application/json"} : {}),
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(r){
+      if(r.status === 401){ var e = new Error("unauthorized"); e.code = 401; throw e; }
+      if(!r.ok) throw new Error("request_failed");
+      return r.json();
+    });
+  }
+
+  function refresh(){
+    return call("GET").then(apply).catch(function(err){
+      if(err.code === 401){ forget("That key isn't recognised."); }
+      else { note("Offline — showing last known moods"); }
+    });
+  }
+
+  function send(mood){
+    var el = panels.you;
+    el.dataset.mood = mood;                        /* instant feedback */
+    call("POST", {mood: mood}).then(apply).catch(function(err){
+      if(err.code === 401){ forget("That key isn't recognised."); }
+      else { note("Couldn't save — try again"); refresh(); }
+    });
+  }
+
+  /* ---------- gate ---------- */
+  function forget(msg){
+    try{ localStorage.removeItem("moodKey"); }catch(e){}
+    key = null;
+    clearInterval(poll);
+    board.hidden = true;
+    gate.hidden = false;
+    gateErr.textContent = msg || "";
+  }
+
+  function start(k){
+    key = k;
+    return call("GET").then(function(state){
+      try{ localStorage.setItem("moodKey", k); }catch(e){}
+      gate.hidden = true;
+      board.hidden = false;
+      apply(state);
+      clearInterval(poll);
+      poll = setInterval(refresh, 20000);
+      document.addEventListener("visibilitychange", function(){
+        if(!document.hidden && key) refresh();
+      });
+    });
+  }
+
+  document.getElementById("gate-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = document.getElementById("gate-input").value.trim();
+    if(!v) return;
+    gateErr.textContent = "";
+    start(v).catch(function(err){
+      gateErr.textContent = err.code === 401
+        ? "That key isn't recognised."
+        : "Couldn't reach the server.";
+    });
+  });
+
+  /* ---------- boot ---------- */
+  buildPanel(panels.you, "you", true);
+  buildPanel(panels.them, "them", false);
+
+  var fromUrl = new URLSearchParams(location.search).get("key");
+  if(fromUrl){ history.replaceState(null, "", location.pathname); }
+  var stored = null;
+  try{ stored = localStorage.getItem("moodKey"); }catch(e){}
+
+  var initial = fromUrl || stored;
+  if(initial){
+    start(initial).catch(function(err){
+      forget(err.code === 401 ? "That key isn't recognised." : "");
+    });
+  } else {
+    gate.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
